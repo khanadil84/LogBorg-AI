@@ -214,6 +214,23 @@ class ExecutionState:
             snapshot = copy.deepcopy(self._state)
         self._notify(snapshot)
 
+    def publish_runtime_event(
+        self,
+        stream: str,
+        message: str,
+    ) -> None:
+        """Publish one real stdout/stderr runtime event to live state."""
+        with self._lock:
+            now = _utcnow()
+            self._state["updated_at"] = now
+            self._append_event_locked(
+                "INGEST",
+                stream.upper(),
+                message,
+            )
+            snapshot = copy.deepcopy(self._state)
+        self._notify(snapshot)
+
     def set_evidence(self, evidence: dict[str, Any]) -> None:
         with self._lock:
             self._state["evidence"] = copy.deepcopy(evidence)

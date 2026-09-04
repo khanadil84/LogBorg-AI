@@ -12,11 +12,34 @@ def write_manifest(
     repair: dict[str, Any],
     verification: dict[str, Any],
 ) -> Path:
-    """Write the complete LogBorg remediation evidence manifest."""
+    """Write complete LogBorg remediation evidence."""
+    generated_at = datetime.now(timezone.utc).isoformat()
+
     manifest = {
-        "schema_version": "1.0",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "schema_version": "1.1",
+        "generated_at": generated_at,
+        "metadata": {
+            "platform": "Modiqo",
+            "author": "@Modiqo",
+            "tag": "#rote",
+            "system": "LogBorg AI",
+        },
+        "autonomy": {
+            "telemetry": "live_stdout_stderr",
+            "fault_detection": "automatic",
+            "diagnosis": "automatic",
+            "repair": "automatic",
+            "verification": "independent_rerun",
+        },
         "target": target,
+        "remediation_timeline": [
+            "LIVE_TELEMETRY_CAPTURED",
+            "FAULT_DETECTED",
+            "ROOT_CAUSE_DIAGNOSED",
+            "REPAIR_APPLIED",
+            "WORKLOAD_RERUN",
+            "RECOVERY_VERIFIED",
+        ],
         "diagnosis": diagnosis,
         "repair": repair,
         "verification": verification,

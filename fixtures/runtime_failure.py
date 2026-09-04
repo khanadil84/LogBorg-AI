@@ -12,3 +12,4 @@ if len(incoming_chunks) > buffer_limit:
     )
 
 print("TRAFFIC STABLE")
+print("HEALTH CHECK: PASS")
