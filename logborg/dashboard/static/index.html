@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LogBorg AI — Autonomous SRE Control Plane</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+
+    <header class="header">
+      <div class="brand">
+        <div class="brand-mark">◈</div>
+        <div>
+          <h1>LOGBORG AI</h1>
+          <p>AUTONOMOUS SRE CONTROL PLANE</p>
+        </div>
+      </div>
+
+      <button class="run" id="run">RUN RECOVERY</button>
+    </header>
+
+    <main class="main">
+
+      <section class="stage">
+        <div class="stage-grid"></div>
+
+        <div class="stage-title">
+          <small>LIVE INFRASTRUCTURE TELEMETRY</small>
+          <strong>EXECUTION FABRIC</strong>
+        </div>
+
+        <div id="topology"></div>
+      </section>
+
+      <aside class="side">
+
+        <section class="panel">
+          <h2>SYSTEM STATUS</h2>
+          <div class="status" id="status">IDLE</div>
+          <div class="message" id="message">
+            Awaiting recovery run.
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>LIVE EVENT STREAM</h2>
+          <div class="events" id="events">
+            <div class="event">Waiting for runtime events…</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>RUNTIME EVIDENCE</h2>
+          <div class="evidence" id="evidence">
+            <div class="message">No runtime evidence yet.</div>
+          </div>
+        </section>
+
+      </aside>
+
+    </main>
+
+    <footer class="footer">
+      <span>LOGBORG AI</span>
+      <span>REAL RUNTIME · REAL STATE · REAL RECOVERY</span>
+    </footer>
+
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
