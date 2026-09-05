@@ -34,7 +34,7 @@ def run_runtime(
 ) -> RuntimeResult:
     """Execute the runtime fixture and capture stdout/stderr."""
     process = subprocess.run(
-        ["python", source],
+        ["python3", source],
         capture_output=True,
         text=True,
         env=_environment(project_root),
@@ -55,7 +55,7 @@ def stream_runtime(
 ) -> RuntimeResult:
     """Run a workload while consuming stdout and stderr concurrently."""
     process = subprocess.Popen(
-        ["python", "-u", source],
+        ["python3", "-u", source],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
