@@ -193,3 +193,79 @@ def test_runtime_reconciliation_confirms_convergence():
     assert assessment.traffic_stable is True
     assert assessment.health_check is True
     assert assessment.drift == ()
+
+def test_supervisor_runs_bounded_recovery_cycles(tmp_path: Path):
+    from logborg.supervisor import supervise
+
+    source = Path("fixtures/runtime_failure.py").resolve()
+    cycles = []
+
+    result = supervise(
+        str(source),
+        tmp_path,
+        cycles=2,
+        reset_sandbox=True,
+        on_cycle=lambda cycle, success: cycles.append((cycle, success)),
+    )
+
+    assert result is True
+    assert cycles == [(1, True), (2, True)]
+
+def test_supervision_detects_runtime_drift():
+    from logborg.supervision import detect_runtime_drift
+
+    evidence = {
+        "verification": {
+            "reconciliation": [
+                {
+                    "converged": False,
+                    "drift": ["health_check_failed"],
+                }
+            ]
+        }
+    }
+
+    drifted, reasons = detect_runtime_drift(evidence)
+
+    assert drifted is True
+    assert reasons == ["health_check_failed"]
+
+
+def test_supervision_confirms_healthy_runtime():
+    from logborg.supervision import detect_runtime_drift
+
+    evidence = {
+        "verification": {
+            "reconciliation": [
+                {
+                    "converged": True,
+                    "drift": [],
+                }
+            ]
+        }
+    }
+
+    drifted, reasons = detect_runtime_drift(evidence)
+
+    assert drifted is False
+    assert reasons == []
+
+def test_supervisor_detects_real_runtime_drift(tmp_path: Path):
+    from logborg.supervision import detect_runtime_drift
+
+    evidence = {
+        "status": "RECOVERY_FAILED",
+        "verification": {
+            "reconciliation": [
+                {
+                    "converged": False,
+                    "drift": ["traffic_not_stable"],
+                }
+            ]
+        },
+    }
+
+    drifted, reasons = detect_runtime_drift(evidence)
+
+    assert drifted is True
+    assert reasons == ["traffic_not_stable"]

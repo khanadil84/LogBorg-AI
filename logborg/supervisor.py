@@ -1,6 +1,10 @@
+import json
 from pathlib import Path
 from typing import Callable
 
+from logborg.supervision import detect_runtime_drift
+
+from logborg.execution_state import LIVE
 from logborg.runtime_orchestrator import recover
 
 
@@ -24,8 +28,23 @@ def supervise(
             source,
             project_root,
             reset_sandbox=reset_sandbox if cycle == 1 else False,
-            state=state,
+            state=state or LIVE,
         )
+
+        evidence_path = Path(project_root) / "runtime-evidence.json"
+
+        if result and evidence_path.exists():
+            try:
+                evidence = json.loads(
+                    evidence_path.read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError):
+                return False
+
+            drifted, reasons = detect_runtime_drift(evidence)
+
+            if drifted:
+                result = False
 
         if on_cycle is not None:
             on_cycle(cycle, result)
