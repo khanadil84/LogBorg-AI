@@ -90,3 +90,17 @@ def incident_memory_evidence(
             else 0.0
         ),
     }
+
+
+def assess_historical_recovery(
+    project_root: Path,
+    fault: str,
+) -> dict[str, Any]:
+    """Assess whether historical evidence supports prior recovery success."""
+    evidence = incident_memory_evidence(project_root, fault)
+
+    return {
+        "known": evidence["historical_incidents"] > 0,
+        "verified_before": evidence["historical_verified"] > 0,
+        "verification_rate": evidence["verification_rate"],
+    }

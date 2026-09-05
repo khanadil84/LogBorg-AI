@@ -109,3 +109,31 @@ def test_incident_memory_evidence_calculates_verification_rate(tmp_path: Path):
     assert evidence["historical_incidents"] == 1
     assert evidence["historical_verified"] == 1
     assert evidence["verification_rate"] == 1.0
+
+
+def test_assess_historical_recovery_reports_prior_success(tmp_path: Path):
+    manifest_dir = tmp_path / "incidents" / "run-assessment-1"
+    manifest_dir.mkdir(parents=True)
+
+    manifest = {
+        "incident": {"run_id": "run-assessment-1"},
+        "diagnosis": {"fault": "BUFFER_OVERFLOW"},
+        "repair": {"action": "BUFFER_OVERFLOW_RUNTIME_REPAIR"},
+        "verification": {"passed": True, "attempts": 1},
+    }
+
+    (manifest_dir / "manifest.json").write_text(
+        json.dumps(manifest),
+        encoding="utf-8",
+    )
+
+    from logborg.incident_memory import assess_historical_recovery
+
+    assessment = assess_historical_recovery(
+        tmp_path,
+        "BUFFER_OVERFLOW",
+    )
+
+    assert assessment["known"] is True
+    assert assessment["verified_before"] is True
+    assert assessment["verification_rate"] == 1.0

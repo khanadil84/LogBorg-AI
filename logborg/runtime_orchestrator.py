@@ -9,7 +9,7 @@ from logborg.ingestion.runtime import run_runtime, stream_runtime
 from logborg.manifest.writer import write_manifest
 from logborg.policy.recovery import select_recovery_policy
 from logborg.policy.safety import evaluate_safety
-from logborg.incident_memory import incident_memory_evidence
+from logborg.incident_memory import incident_memory_evidence, assess_historical_recovery
 from logborg.repair.runtime import apply_runtime_repair, rollback_runtime_repair
 from logborg.verification.runtime import verify_runtime_recovery
 
@@ -154,6 +154,7 @@ def recover(
         return False
 
     evidence["memory"] = incident_memory_evidence(project_root, diagnosis.fault)
+    evidence["historical_assessment"] = assess_historical_recovery(project_root, diagnosis.fault)
 
     evidence["policy"] = {
         "playbook": policy.playbook,
