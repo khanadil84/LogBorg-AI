@@ -12,6 +12,7 @@ from logborg.policy.safety import evaluate_safety
 from logborg.incident_memory import incident_memory_evidence, assess_historical_recovery
 from logborg.repair.runtime import apply_runtime_repair, rollback_runtime_repair
 from logborg.verification.runtime import assess_runtime_recovery
+from logborg.verification.reconciliation import reconcile_runtime_state
 
 
 
@@ -257,6 +258,7 @@ def recover(
     for attempt in range(1, policy.max_attempts + 1):
         recovered = run_runtime(source, project_root)
         assessment = assess_runtime_recovery(recovered, diagnosis.fault)
+        reconciliation = reconcile_runtime_state(recovered)
 
         attempt_evidence = {
             "attempt": attempt,
@@ -264,6 +266,14 @@ def recover(
             "stdout": recovered.stdout,
             "stderr": recovered.stderr,
             "assessment": assessment,
+            "reconciliation": {
+                "converged": reconciliation.converged,
+                "return_code_ok": reconciliation.return_code_ok,
+                "stderr_empty": reconciliation.stderr_empty,
+                "traffic_stable": reconciliation.traffic_stable,
+                "health_check": reconciliation.health_check,
+                "drift": list(reconciliation.drift),
+            },
         }
         attempts.append(attempt_evidence)
 
@@ -371,6 +381,11 @@ def recover(
     evidence["verification"] = {
         "passed": verified,
         "attempts": len(attempts),
+        "reconciliation": [
+            attempt["reconciliation"]
+            for attempt in attempts
+            if "reconciliation" in attempt
+        ],
     }
 
     if not verified:

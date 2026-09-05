@@ -154,3 +154,42 @@ def test_adaptive_reassessment_event_is_recorded(tmp_path: Path, monkeypatch):
     assert '"status": "RECOVERED"' in evidence
     assert "Out of memory: memory exhausted" in evidence
     assert "MEMORY_PRESSURE_RUNTIME_REPAIR" in evidence
+
+def test_runtime_reconciliation_detects_drift():
+    from logborg.ingestion.runtime import RuntimeResult
+    from logborg.verification.reconciliation import reconcile_runtime_state
+
+    result = RuntimeResult(
+        return_code=1,
+        stdout="SERVICE STARTED\nBUFFER LIMIT: 2",
+        stderr="Stream buffer overflow",
+    )
+
+    assessment = reconcile_runtime_state(result)
+
+    assert assessment.converged is False
+    assert assessment.return_code_ok is False
+    assert assessment.stderr_empty is False
+    assert assessment.traffic_stable is False
+    assert assessment.health_check is False
+    assert assessment.drift
+
+
+def test_runtime_reconciliation_confirms_convergence():
+    from logborg.ingestion.runtime import RuntimeResult
+    from logborg.verification.reconciliation import reconcile_runtime_state
+
+    result = RuntimeResult(
+        return_code=0,
+        stdout="SERVICE STARTED\nBUFFER LIMIT: 8\nTRAFFIC STABLE\nHEALTH CHECK: PASS",
+        stderr="",
+    )
+
+    assessment = reconcile_runtime_state(result)
+
+    assert assessment.converged is True
+    assert assessment.return_code_ok is True
+    assert assessment.stderr_empty is True
+    assert assessment.traffic_stable is True
+    assert assessment.health_check is True
+    assert assessment.drift == ()
