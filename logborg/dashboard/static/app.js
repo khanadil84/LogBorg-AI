@@ -139,3 +139,33 @@ document.getElementById("run").onclick = async () => {
 };
 
 render();
+
+const incidentsEl = document.getElementById("incidents");
+
+async function loadIncidents(){
+  if(!incidentsEl) return;
+
+  try{
+    const incidents = await fetch("/api/incidents", {cache:"no-store"}).then(r => r.json());
+
+    incidentsEl.innerHTML = incidents.length
+      ? incidents.map(i => {
+          const m = i.manifest || {};
+          const d = m.diagnosis || {};
+          const v = m.verification || {};
+
+          return `<div class="event incident">
+            <b>${esc(i.run_id)}</b><br>
+            ${esc(d.fault || "UNKNOWN")} · ${esc(d.severity || "UNKNOWN")} ·
+            <span>${esc(m.incident?.lifecycle || "UNKNOWN")}</span><br>
+            Verification: ${v.passed ? "PASSED" : "FAILED"}
+          </div>`;
+        }).join("")
+      : `<div class="event">No preserved incidents.</div>`;
+  }catch{
+    incidentsEl.innerHTML = `<div class="event">Incident history unavailable.</div>`;
+  }
+}
+
+loadIncidents();
+setInterval(loadIncidents, 3000);

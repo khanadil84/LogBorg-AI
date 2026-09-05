@@ -236,6 +236,7 @@ def recover(
     write_manifest(
         project_root,
         target=source,
+        run_id=run_id,
         diagnosis=evidence["diagnosis"],
         repair=evidence["repair"],
         verification=evidence["verification"],
@@ -265,11 +266,17 @@ def _reset_sandbox(project_root: Path) -> None:
 
 
 def _write_evidence(project_root: Path, evidence: dict) -> None:
+    payload = json.dumps(evidence, indent=2)
+
     output = project_root / "runtime-evidence.json"
-    output.write_text(
-        json.dumps(evidence, indent=2),
-        encoding="utf-8",
-    )
+    output.write_text(payload, encoding="utf-8")
+
+    run_id = evidence.get("run_id")
+    if run_id:
+        incident_dir = project_root / "incidents" / run_id
+        incident_dir.mkdir(parents=True, exist_ok=True)
+        archive = incident_dir / "evidence.json"
+        archive.write_text(payload, encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.1",
+  "generated_at": "2026-09-05T08:40:47.756965+00:00",
+  "metadata": {
+    "platform": "Modiqo",
+    "author": "@Modiqo",
+    "tag": "#rote",
+    "system": "LogBorg AI"
+  },
+  "autonomy": {
+    "telemetry": "live_stdout_stderr",
+    "fault_detection": "automatic",
+    "diagnosis": "automatic",
+    "repair": "automatic",
+    "verification": "independent_rerun"
+  },
+  "incident": {
+    "run_id": "run-1788597647376",
+    "lifecycle": "RECOVERED"
+  },
+  "target": "/home/asus/LogBorg-AI/fixtures/memory_failure.py",
+  "remediation_timeline": [
+    "LIVE_TELEMETRY_CAPTURED",
+    "FAULT_DETECTED",
+    "ROOT_CAUSE_DIAGNOSED",
+    "REPAIR_APPLIED",
+    "WORKLOAD_RERUN",
+    "RECOVERY_VERIFIED"
+  ],
+  "diagnosis": {
+    "fault": "MEMORY_PRESSURE",
+    "severity": "HIGH",
+    "root_cause": "Runtime memory pressure was detected.",
+    "recommended_action": "Isolate the unhealthy workload and activate the recovery sandbox."
+  },
+  "repair": {
+    "applied": true,
+    "action": "MEMORY_PRESSURE_RUNTIME_REPAIR"
+  },
+  "verification": {
+    "passed": true,
+    "attempts": 1
+  }
+}

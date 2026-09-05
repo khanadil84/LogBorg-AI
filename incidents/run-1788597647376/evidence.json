@@ -1,0 +1,40 @@
+{
+  "source": "/home/asus/LogBorg-AI/fixtures/memory_failure.py",
+  "run_id": "run-1788597647376",
+  "initial": {
+    "return_code": 1,
+    "stdout": "SERVICE STARTED\nMEMORY MODE: normal",
+    "stderr": "Traceback (most recent call last):\n  File \"/home/asus/LogBorg-AI/fixtures/memory_failure.py\", line 9, in <module>\n    raise RuntimeError(\"Out of memory: memory exhausted\")\nRuntimeError: Out of memory: memory exhausted"
+  },
+  "live_faults": [
+    {
+      "stream": "stderr",
+      "line": "    raise RuntimeError(\"Out of memory: memory exhausted\")",
+      "fault": "MEMORY_PRESSURE",
+      "severity": "HIGH"
+    }
+  ],
+  "diagnosis": {
+    "fault": "MEMORY_PRESSURE",
+    "severity": "HIGH",
+    "root_cause": "Runtime memory pressure was detected.",
+    "recommended_action": "Isolate the unhealthy workload and activate the recovery sandbox."
+  },
+  "repair": {
+    "applied": true,
+    "action": "MEMORY_PRESSURE_RUNTIME_REPAIR"
+  },
+  "recovery_attempts": [
+    {
+      "attempt": 1,
+      "return_code": 0,
+      "stdout": "SERVICE STARTED\nMEMORY MODE: sandbox\nMEMORY STABLE\nHEALTH CHECK: PASS\n",
+      "stderr": ""
+    }
+  ],
+  "verification": {
+    "passed": true,
+    "attempts": 1
+  },
+  "status": "RECOVERED"
+}

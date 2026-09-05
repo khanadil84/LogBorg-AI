@@ -50,6 +50,40 @@ class Handler(BaseHTTPRequestHandler):
             self._sse()
             return
 
+        if path == "/api/incidents":
+            incidents_dir = ROOT / "incidents"
+            incidents = []
+
+            if incidents_dir.exists():
+                for incident_dir in sorted(incidents_dir.iterdir(), reverse=True):
+                    if not incident_dir.is_dir():
+                        continue
+
+                    manifest = incident_dir / "manifest.json"
+                    evidence = incident_dir / "evidence.json"
+
+                    item = {
+                        "run_id": incident_dir.name,
+                        "manifest": None,
+                        "evidence": None,
+                    }
+
+                    if manifest.exists():
+                        item["manifest"] = json.loads(
+                            manifest.read_text(encoding="utf-8")
+                        )
+
+                    if evidence.exists():
+                        item["evidence"] = json.loads(
+                            evidence.read_text(encoding="utf-8")
+                        )
+
+                    incidents.append(item)
+
+            body = json.dumps(incidents).encode()
+            self._send(200, "application/json; charset=utf-8", body)
+            return
+
         self._send(404, "text/plain; charset=utf-8", b"Not found")
 
     def do_POST(self) -> None:
@@ -60,7 +94,7 @@ class Handler(BaseHTTPRequestHandler):
         source = ROOT / "fixtures" / "runtime_failure.py"
 
         def worker() -> None:
-            recover(str(source), ROOT)
+            recover(str(source), ROOT, reset_sandbox=True)
 
         threading.Thread(target=worker, daemon=True).start()
         self._send(202, "application/json; charset=utf-8", b'{"started":true}')
@@ -73,7 +107,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
         event = json.dumps(LIVE.snapshot())
-        self.wfile.write(f"data: {event}\\n\\n".encode())
+        self.wfile.write(f"data: {event}\n\n".encode())
         self.wfile.flush()
 
         done = threading.Event()
@@ -81,7 +115,7 @@ class Handler(BaseHTTPRequestHandler):
         def listener(snapshot: dict) -> None:
             try:
                 payload = json.dumps(snapshot)
-                self.wfile.write(f"data: {payload}\\n\\n".encode())
+                self.wfile.write(f"data: {payload}\n\n".encode())
                 self.wfile.flush()
             except Exception:
                 done.set()

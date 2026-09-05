@@ -1,0 +1,11 @@
+{
+  "source": "/home/asus/LogBorg-AI/fixtures/runtime_failure.py",
+  "run_id": "run-1788598902851",
+  "initial": {
+    "return_code": 0,
+    "stdout": "SERVICE STARTED\nBUFFER LIMIT: 8\nTRAFFIC STABLE\nHEALTH CHECK: PASS",
+    "stderr": ""
+  },
+  "live_faults": [],
+  "status": "HEALTHY"
+}

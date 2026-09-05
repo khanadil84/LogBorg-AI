@@ -8,6 +8,7 @@ def write_manifest(
     project_root: Path,
     *,
     target: str,
+    run_id: str,
     diagnosis: dict[str, Any],
     repair: dict[str, Any],
     verification: dict[str, Any],
@@ -31,6 +32,10 @@ def write_manifest(
             "repair": "automatic",
             "verification": "independent_rerun",
         },
+        "incident": {
+            "run_id": run_id,
+            "lifecycle": "RECOVERED",
+        },
         "target": target,
         "remediation_timeline": [
             "LIVE_TELEMETRY_CAPTURED",
@@ -45,10 +50,14 @@ def write_manifest(
         "verification": verification,
     }
 
+    payload = json.dumps(manifest, indent=2)
+
     output = project_root / "logborg-manifest.json"
-    output.write_text(
-        json.dumps(manifest, indent=2),
-        encoding="utf-8",
-    )
+    output.write_text(payload, encoding="utf-8")
+
+    incident_dir = project_root / "incidents" / run_id
+    incident_dir.mkdir(parents=True, exist_ok=True)
+    archive = incident_dir / "manifest.json"
+    archive.write_text(payload, encoding="utf-8")
 
     return output

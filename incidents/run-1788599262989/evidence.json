@@ -1,0 +1,40 @@
+{
+  "source": "/home/asus/LogBorg-AI/fixtures/runtime_failure.py",
+  "run_id": "run-1788599262989",
+  "initial": {
+    "return_code": 1,
+    "stdout": "SERVICE STARTED\nBUFFER LIMIT: 2",
+    "stderr": "Traceback (most recent call last):\n  File \"/home/asus/LogBorg-AI/fixtures/runtime_failure.py\", line 10, in <module>\n    raise RuntimeError(\n        f\"Stream buffer overflow: {len(incoming_chunks)} chunks > limit {buffer_limit}\"\n    )\nRuntimeError: Stream buffer overflow: 4 chunks > limit 2"
+  },
+  "live_faults": [
+    {
+      "stream": "stderr",
+      "line": "        f\"Stream buffer overflow: {len(incoming_chunks)} chunks > limit {buffer_limit}\"",
+      "fault": "BUFFER_OVERFLOW",
+      "severity": "CRITICAL"
+    }
+  ],
+  "diagnosis": {
+    "fault": "BUFFER_OVERFLOW",
+    "severity": "CRITICAL",
+    "root_cause": "Runtime stream buffer capacity was exceeded.",
+    "recommended_action": "Increase the sandbox buffer limit and rerun the workload."
+  },
+  "repair": {
+    "applied": true,
+    "action": "BUFFER_OVERFLOW_RUNTIME_REPAIR"
+  },
+  "recovery_attempts": [
+    {
+      "attempt": 1,
+      "return_code": 0,
+      "stdout": "SERVICE STARTED\nBUFFER LIMIT: 8\nTRAFFIC STABLE\nHEALTH CHECK: PASS\n",
+      "stderr": ""
+    }
+  ],
+  "verification": {
+    "passed": true,
+    "attempts": 1
+  },
+  "status": "RECOVERED"
+}

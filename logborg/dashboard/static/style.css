@@ -95,7 +95,7 @@ button{font:inherit}
 .side{
   min-height:0;
   display:grid;
-  grid-template-rows:auto 1fr 1fr;
+  grid-template-rows:auto 1fr 1fr 1fr;
   gap:10px;
 }
 .panel{
@@ -134,4 +134,18 @@ pre{margin:0;white-space:pre-wrap;color:#9eabc0}
 @media(max-width:900px){
   .main{grid-template-columns:1fr}
   .side{display:none}
+}
+
+.incident{
+  position:relative;
+  padding-left:10px;
+  transition:background .2s ease;
+}
+.incident:hover{
+  background:rgba(56,189,248,.04);
+}
+.incident span{
+  color:#34d399;
+  font-weight:700;
+  letter-spacing:.08em;
 }
