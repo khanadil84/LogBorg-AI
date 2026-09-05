@@ -2,3 +2,5 @@
 incidents/*/
 !incidents/run-1788597543895/
 !incidents/run-1788597647376/
+__pycache__/
+*.py[cod]
