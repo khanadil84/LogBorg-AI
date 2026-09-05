@@ -224,12 +224,22 @@ def recover(
         f"Applying {diagnosis.fault} runtime repair configuration.",
     )
 
+    recovery_steps: list[dict] = []
+
     repair_applied = apply_runtime_repair(source, project_root, diagnosis.fault)
 
     evidence["repair"] = {
         "applied": repair_applied,
         "action": f"{diagnosis.fault}_RUNTIME_REPAIR",
     }
+
+    if repair_applied:
+        recovery_steps.append({
+            "step": 1,
+            "fault": diagnosis.fault,
+            "action": f"{diagnosis.fault}_RUNTIME_REPAIR",
+            "applied": True,
+        })
 
     if not repair_applied:
         state.fail_phase(
@@ -366,6 +376,13 @@ def recover(
                             "action": f"{diagnosis.fault}_RUNTIME_REPAIR",
                         }
 
+                        recovery_steps.append({
+                            "step": len(recovery_steps) + 1,
+                            "fault": diagnosis.fault,
+                            "action": f"{diagnosis.fault}_RUNTIME_REPAIR",
+                            "applied": True,
+                        })
+
                         state.publish_runtime_event(
                             "verification",
                             f"Adaptive repair applied: {diagnosis.fault}_RUNTIME_REPAIR.",
@@ -377,6 +394,7 @@ def recover(
                 "Adaptive recovery decision: reassess before next bounded attempt.",
             )
 
+    evidence["recovery_steps"] = recovery_steps
     evidence["recovery_attempts"] = attempts
     evidence["verification"] = {
         "passed": verified,
@@ -435,7 +453,7 @@ def recover(
         safety=evidence["safety"],
         repair=evidence["repair"],
         verification=evidence["verification"],
-        recovery_steps=evidence.get("recovery_attempts", []),
+        recovery_steps=evidence.get("recovery_steps", []),
     )
 
     _write_evidence(project_root, evidence)

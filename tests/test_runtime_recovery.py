@@ -157,8 +157,10 @@ def test_adaptive_reassessment_event_is_recorded(tmp_path: Path, monkeypatch):
     assert "MEMORY_PRESSURE_RUNTIME_REPAIR" in evidence
 
     assert '"recovery_steps": [' in manifest
-    assert '"attempt": 1' in manifest
-    assert '"reconciliation": {' in manifest
+    assert '"fault": "BUFFER_OVERFLOW"' in manifest
+    assert '"action": "BUFFER_OVERFLOW_RUNTIME_REPAIR"' in manifest
+    assert '"fault": "MEMORY_PRESSURE"' in manifest
+    assert '"action": "MEMORY_PRESSURE_RUNTIME_REPAIR"' in manifest
 
 def test_runtime_reconciliation_detects_drift():
     from logborg.ingestion.runtime import RuntimeResult
