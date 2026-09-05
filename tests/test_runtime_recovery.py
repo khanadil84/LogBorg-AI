@@ -63,3 +63,37 @@ def test_health_check_required(tmp_path: Path):
     )
 
     assert verify_runtime_recovery(result, "BUFFER_OVERFLOW") is False
+
+
+def test_unsafe_policy_is_blocked_before_repair(tmp_path: Path):
+    from logborg.policy import recovery as recovery_policy
+    from logborg.policy.recovery import RecoveryPolicy
+
+    original = recovery_policy.POLICIES["BUFFER_OVERFLOW"]
+
+    recovery_policy.POLICIES["BUFFER_OVERFLOW"] = RecoveryPolicy(
+        fault="BUFFER_OVERFLOW",
+        playbook="UNSAFE_TEST_POLICY",
+        max_attempts=0,
+        rollback_on_failure=True,
+        requires_verification=True,
+    )
+
+    try:
+        source = Path("fixtures/runtime_failure.py").resolve()
+
+        assert recover(
+            str(source),
+            tmp_path,
+            reset_sandbox=True,
+        ) is False
+
+        evidence = tmp_path / "runtime-evidence.json"
+        content = evidence.read_text()
+
+        assert '"status": "SAFETY_BLOCKED"' in content
+        assert '"allowed": false' in content
+        assert "attempt bound" in content
+        assert not (tmp_path / "sandbox" / "runtime_repair.conf").exists()
+    finally:
+        recovery_policy.POLICIES["BUFFER_OVERFLOW"] = original
