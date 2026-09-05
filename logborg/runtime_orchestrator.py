@@ -11,7 +11,7 @@ from logborg.policy.recovery import select_recovery_policy
 from logborg.policy.safety import evaluate_safety
 from logborg.incident_memory import incident_memory_evidence, assess_historical_recovery
 from logborg.repair.runtime import apply_runtime_repair, rollback_runtime_repair
-from logborg.verification.runtime import verify_runtime_recovery
+from logborg.verification.runtime import assess_runtime_recovery
 
 
 
@@ -256,18 +256,116 @@ def recover(
 
     for attempt in range(1, policy.max_attempts + 1):
         recovered = run_runtime(source, project_root)
+        assessment = assess_runtime_recovery(recovered, diagnosis.fault)
 
         attempt_evidence = {
             "attempt": attempt,
             "return_code": recovered.return_code,
             "stdout": recovered.stdout,
             "stderr": recovered.stderr,
+            "assessment": assessment,
         }
         attempts.append(attempt_evidence)
 
-        if verify_runtime_recovery(recovered, diagnosis.fault):
+        if assessment["passed"]:
             verified = True
             break
+
+        state.publish_runtime_event(
+            "verification",
+            (
+                f"Recovery reassessment failed on attempt {attempt}: "
+                f"return_code_ok={assessment['return_code_ok']}, "
+                f"stderr_empty={assessment['stderr_empty']}, "
+                f"health_check={assessment['health_check']}, "
+                f"stability_signal={assessment['stability_signal']}."
+            ),
+        )
+
+        next_diagnosis = diagnose_runtime_failure(recovered.stderr)
+
+        if (
+            next_diagnosis is not None
+            and next_diagnosis.fault != diagnosis.fault
+            and next_diagnosis.fault in {"BUFFER_OVERFLOW", "MEMORY_PRESSURE"}
+            and attempt < policy.max_attempts
+        ):
+            state.publish_runtime_event(
+                "verification",
+                f"Adaptive diagnosis: new fault detected — {next_diagnosis.fault} ({next_diagnosis.severity}).",
+            )
+
+            next_memory = incident_memory_evidence(
+                project_root,
+                next_diagnosis.fault,
+            )
+
+            next_policy = select_recovery_policy(
+                next_diagnosis.fault,
+                next_memory,
+            )
+
+            if next_policy is not None:
+                next_safety = evaluate_safety(next_policy)
+
+                state.publish_runtime_event(
+                    "verification",
+                    f"Adaptive policy selected: {next_policy.playbook}.",
+                )
+
+                if next_safety.allowed:
+                    diagnosis = next_diagnosis
+                    policy = next_policy
+
+                    state.publish_runtime_event(
+                        "verification",
+                        f"Adaptive safety gate passed for {policy.playbook}; applying next recovery step.",
+                    )
+
+                    next_repair = apply_runtime_repair(
+                        source,
+                        project_root,
+                        diagnosis.fault,
+                    )
+
+                    if not next_repair:
+                        state.publish_runtime_event(
+                            "verification",
+                            f"Adaptive repair failed for {diagnosis.fault}.",
+                        )
+                    else:
+                        evidence["diagnosis"] = {
+                            "fault": diagnosis.fault,
+                            "severity": diagnosis.severity,
+                            "root_cause": diagnosis.root_cause,
+                            "recommended_action": diagnosis.recommended_action,
+                        }
+                        evidence["policy"] = {
+                            "playbook": policy.playbook,
+                            "selection_reason": "Selected adaptively after verification detected a new supported fault.",
+                            "max_attempts": policy.max_attempts,
+                            "rollback_on_failure": policy.rollback_on_failure,
+                            "requires_verification": policy.requires_verification,
+                        }
+                        evidence["safety"] = {
+                            "allowed": next_safety.allowed,
+                            "reason": next_safety.reason,
+                        }
+                        evidence["repair"] = {
+                            "applied": True,
+                            "action": f"{diagnosis.fault}_RUNTIME_REPAIR",
+                        }
+
+                        state.publish_runtime_event(
+                            "verification",
+                            f"Adaptive repair applied: {diagnosis.fault}_RUNTIME_REPAIR.",
+                        )
+
+        elif attempt < policy.max_attempts:
+            state.publish_runtime_event(
+                "verification",
+                "Adaptive recovery decision: reassess before next bounded attempt.",
+            )
 
     evidence["recovery_attempts"] = attempts
     evidence["verification"] = {

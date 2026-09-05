@@ -78,3 +78,22 @@ def test_recovery_policy_prefers_verified_historical_playbook():
 
     assert policy is not None
     assert policy.playbook == "BUFFER_SANDBOX_OVERRIDE"
+
+
+def test_recovery_policy_falls_back_when_history_has_no_verified_playbook():
+    from logborg.policy.recovery import select_recovery_policy
+
+    memory = {
+        "historical_incidents": 42,
+        "historical_verified": 42,
+        "verification_rate": 1.0,
+        "verified_playbooks": {},
+    }
+
+    policy = select_recovery_policy("BUFFER_OVERFLOW", memory)
+
+    assert policy is not None
+    assert policy.playbook == "BUFFER_SANDBOX_OVERRIDE"
+    assert policy.max_attempts == 2
+    assert policy.rollback_on_failure is True
+    assert policy.requires_verification is True

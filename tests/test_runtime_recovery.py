@@ -97,3 +97,60 @@ def test_unsafe_policy_is_blocked_before_repair(tmp_path: Path):
         assert not (tmp_path / "sandbox" / "runtime_repair.conf").exists()
     finally:
         recovery_policy.POLICIES["BUFFER_OVERFLOW"] = original
+
+
+def test_recovery_verification_reports_failure_reason():
+    from logborg.ingestion.runtime import RuntimeResult
+    from logborg.verification.runtime import assess_runtime_recovery
+
+    result = RuntimeResult(
+        return_code=1,
+        stdout="SERVICE STARTED",
+        stderr="Stream buffer overflow",
+    )
+
+    assessment = assess_runtime_recovery(result, "BUFFER_OVERFLOW")
+
+    assert assessment["passed"] is False
+    assert assessment["return_code_ok"] is False
+    assert assessment["stderr_empty"] is False
+    assert assessment["health_check"] is False
+    assert assessment["stability_signal"] is False
+
+
+def test_verification_assessment_can_drive_reassessment():
+    from logborg.ingestion.runtime import RuntimeResult
+    from logborg.verification.runtime import assess_runtime_recovery
+
+    result = RuntimeResult(
+        return_code=1,
+        stdout="SERVICE STARTED\nBUFFER LIMIT: 2",
+        stderr="Stream buffer overflow: 4 chunks > limit 2",
+    )
+
+    assessment = assess_runtime_recovery(result, "BUFFER_OVERFLOW")
+
+    assert assessment["passed"] is False
+    assert assessment["return_code_ok"] is False
+    assert assessment["stderr_empty"] is False
+    assert assessment["health_check"] is False
+    assert assessment["stability_signal"] is False
+    assert assessment["return_code"] == 1
+
+
+def test_adaptive_reassessment_event_is_recorded(tmp_path: Path, monkeypatch):
+    source = Path("fixtures/runtime_adaptive_failure.py").resolve()
+
+    monkeypatch.setenv("LOGBORG_ADAPTIVE_TEST", "1")
+
+    assert recover(
+        str(source),
+        tmp_path,
+        reset_sandbox=True,
+    ) is True
+
+    evidence = (tmp_path / "runtime-evidence.json").read_text()
+
+    assert '"status": "RECOVERED"' in evidence
+    assert "Out of memory: memory exhausted" in evidence
+    assert "MEMORY_PRESSURE_RUNTIME_REPAIR" in evidence

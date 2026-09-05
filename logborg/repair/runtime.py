@@ -1,12 +1,32 @@
 from pathlib import Path
 
 
+def _read_runtime_config(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+
+    if not path.exists():
+        return values
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key and key != "REPAIR":
+            values[key] = value
+
+    return values
+
+
 def apply_runtime_repair(
     source: str,
     project_root: Path,
     fault: str = "BUFFER_OVERFLOW",
 ) -> bool:
-    """Apply a reversible runtime repair configuration."""
+    """Apply a reversible and composable runtime repair configuration."""
     repair_config = project_root / "sandbox" / "runtime_repair.conf"
     backup_config = project_root / "sandbox" / "runtime_repair.conf.bak"
 
@@ -18,18 +38,21 @@ def apply_runtime_repair(
             encoding="utf-8",
         )
 
+    values = _read_runtime_config(repair_config)
+
     if fault == "BUFFER_OVERFLOW":
-        content = (
-            "LOGBORG_BUFFER_LIMIT=8\n"
-            "REPAIR=BUFFER_OVERFLOW\n"
-        )
+        values["LOGBORG_BUFFER_LIMIT"] = "8"
     elif fault == "MEMORY_PRESSURE":
-        content = (
-            "LOGBORG_MEMORY_MODE=sandbox\n"
-            "REPAIR=MEMORY_PRESSURE\n"
-        )
+        values["LOGBORG_MEMORY_MODE"] = "sandbox"
     else:
         return False
+
+    values["REPAIR"] = fault
+
+    content = "\n".join(
+        f"{key}={value}"
+        for key, value in values.items()
+    ) + "\n"
 
     repair_config.write_text(content, encoding="utf-8")
     return True
