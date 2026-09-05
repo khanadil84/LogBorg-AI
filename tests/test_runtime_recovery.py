@@ -269,3 +269,28 @@ def test_supervisor_detects_real_runtime_drift(tmp_path: Path):
 
     assert drifted is True
     assert reasons == ["traffic_not_stable"]
+
+def test_unknown_runtime_fault_is_not_diagnosed():
+    from logborg.diagnosis.runtime import diagnose_runtime_failure
+
+    diagnosis = diagnose_runtime_failure(
+        "RuntimeError: database connection corruption detected"
+    )
+
+    assert diagnosis is None
+
+def test_unknown_fault_blocks_recovery_policy():
+    from logborg.policy.recovery import select_recovery_policy
+
+    policy = select_recovery_policy("DATABASE_CORRUPTION")
+
+    assert policy is None
+
+def test_unknown_runtime_error_is_recorded_as_undiagnosed(tmp_path: Path):
+    from logborg.diagnosis.runtime import diagnose_runtime_failure
+
+    diagnosis = diagnose_runtime_failure(
+        "RuntimeError: database connection corruption detected"
+    )
+
+    assert diagnosis is None
