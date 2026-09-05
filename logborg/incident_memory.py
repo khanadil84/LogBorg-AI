@@ -48,3 +48,45 @@ def load_incident_memory(project_root: Path) -> dict[str, Any]:
         "fault_counts": dict(faults),
         "incidents": incidents,
     }
+
+
+def query_incident_memory(
+    project_root: Path,
+    fault: str,
+) -> dict[str, Any]:
+    """Return historical memory relevant to a specific fault."""
+    memory = load_incident_memory(project_root)
+
+    matches = [
+        incident
+        for incident in memory["incidents"]
+        if incident.get("fault") == fault
+    ]
+
+    return {
+        "fault": fault,
+        "incident_count": len(matches),
+        "verified_count": sum(
+            1 for incident in matches if incident.get("verified") is True
+        ),
+        "incidents": matches,
+    }
+
+
+def incident_memory_evidence(
+    project_root: Path,
+    fault: str,
+) -> dict[str, Any]:
+    """Summarize historical recovery evidence for a fault."""
+    memory = query_incident_memory(project_root, fault)
+
+    return {
+        "fault": memory["fault"],
+        "historical_incidents": memory["incident_count"],
+        "historical_verified": memory["verified_count"],
+        "verification_rate": (
+            memory["verified_count"] / memory["incident_count"]
+            if memory["incident_count"]
+            else 0.0
+        ),
+    }
