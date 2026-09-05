@@ -15,6 +15,7 @@ def write_manifest(
     safety: dict[str, Any],
     repair: dict[str, Any],
     verification: dict[str, Any],
+    recovery_steps: list[dict[str, Any]] | None = None,
 ) -> Path:
     """Write complete LogBorg remediation evidence."""
     generated_at = datetime.now(timezone.utc).isoformat()
@@ -54,6 +55,7 @@ def write_manifest(
         "safety": safety,
         "repair": repair,
         "verification": verification,
+        "recovery_steps": recovery_steps or [],
     }
 
     payload = json.dumps(manifest, indent=2)

@@ -435,6 +435,7 @@ def recover(
         safety=evidence["safety"],
         repair=evidence["repair"],
         verification=evidence["verification"],
+        recovery_steps=evidence.get("recovery_attempts", []),
     )
 
     _write_evidence(project_root, evidence)
