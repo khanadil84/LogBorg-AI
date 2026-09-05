@@ -12,7 +12,6 @@ from logborg.policy.safety import evaluate_safety
 from logborg.repair.runtime import apply_runtime_repair, rollback_runtime_repair
 from logborg.verification.runtime import verify_runtime_recovery
 
-MAX_RECOVERY_ATTEMPTS = 2
 
 
 def recover(
@@ -225,7 +224,7 @@ def recover(
     # --- VERIFY -----------------------------------------------------------
     state.begin_phase(
         "VERIFY",
-        f"Re-executing workload with at most {MAX_RECOVERY_ATTEMPTS} recovery attempts.",
+        f"Re-executing workload with at most {policy.max_attempts} recovery attempts.",
     )
 
     attempts: list[dict] = []
