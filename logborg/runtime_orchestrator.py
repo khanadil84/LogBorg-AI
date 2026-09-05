@@ -140,7 +140,13 @@ def recover(
         f"{diagnosis.fault} ({diagnosis.severity}) — {diagnosis.root_cause}",
     )
 
-    policy = select_recovery_policy(diagnosis.fault)
+    evidence["memory"] = incident_memory_evidence(project_root, diagnosis.fault)
+    evidence["historical_assessment"] = assess_historical_recovery(project_root, diagnosis.fault)
+
+    policy = select_recovery_policy(
+        diagnosis.fault,
+        evidence["memory"],
+    )
 
     if policy is None:
         state.fail_phase(
@@ -153,11 +159,25 @@ def recover(
         _write_evidence(project_root, evidence)
         return False
 
-    evidence["memory"] = incident_memory_evidence(project_root, diagnosis.fault)
-    evidence["historical_assessment"] = assess_historical_recovery(project_root, diagnosis.fault)
+    historical_verified = evidence["memory"].get("historical_verified", 0)
+    verified_playbooks = evidence["memory"].get("verified_playbooks", {})
+
+    if policy.playbook in verified_playbooks:
+        playbook_verified = verified_playbooks[policy.playbook]
+        selection_reason = (
+            f"Selected from historical evidence: {playbook_verified} "
+            f"verified incidents explicitly support {policy.playbook}; "
+            f"{historical_verified} total incidents for this fault were verified."
+        )
+    else:
+        selection_reason = (
+            "Selected from the bounded default policy because no verified "
+            "historical playbook was available."
+        )
 
     evidence["policy"] = {
         "playbook": policy.playbook,
+        "selection_reason": selection_reason,
         "max_attempts": policy.max_attempts,
         "rollback_on_failure": policy.rollback_on_failure,
         "requires_verification": policy.requires_verification,

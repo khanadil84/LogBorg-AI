@@ -19,6 +19,7 @@ def load_incident_memory(project_root: Path) -> dict[str, Any]:
         diagnosis = data.get("diagnosis", {})
         repair = data.get("repair", {})
         verification = data.get("verification", {})
+        policy = data.get("policy", {})
 
         incidents.append(
             {
@@ -26,6 +27,7 @@ def load_incident_memory(project_root: Path) -> dict[str, Any]:
                 "fault": diagnosis.get("fault"),
                 "severity": diagnosis.get("severity"),
                 "root_cause": diagnosis.get("root_cause"),
+                "playbook": policy.get("playbook"),
                 "repair_action": repair.get("action"),
                 "verified": verification.get("passed"),
                 "attempts": verification.get("attempts"),
@@ -63,12 +65,26 @@ def query_incident_memory(
         if incident.get("fault") == fault
     ]
 
+    playbook_counts = Counter(
+        incident["playbook"]
+        for incident in matches
+        if incident.get("playbook")
+    )
+
+    verified_playbooks = Counter(
+        incident["playbook"]
+        for incident in matches
+        if incident.get("verified") is True and incident.get("playbook")
+    )
+
     return {
         "fault": fault,
         "incident_count": len(matches),
         "verified_count": sum(
             1 for incident in matches if incident.get("verified") is True
         ),
+        "playbook_counts": dict(playbook_counts),
+        "verified_playbook_counts": dict(verified_playbooks),
         "incidents": matches,
     }
 
@@ -89,6 +105,7 @@ def incident_memory_evidence(
             if memory["incident_count"]
             else 0.0
         ),
+        "verified_playbooks": memory["verified_playbook_counts"],
     }
 
 
@@ -103,4 +120,5 @@ def assess_historical_recovery(
         "known": evidence["historical_incidents"] > 0,
         "verified_before": evidence["historical_verified"] > 0,
         "verification_rate": evidence["verification_rate"],
+        "verified_playbooks": evidence["verified_playbooks"],
     }

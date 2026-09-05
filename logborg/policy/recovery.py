@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,29 @@ POLICIES = {
 }
 
 
-def select_recovery_policy(fault: str) -> RecoveryPolicy | None:
-    """Select a bounded and verifiable recovery policy for a known fault."""
-    return POLICIES.get(fault)
+def select_recovery_policy(
+    fault: str,
+    memory: dict[str, Any] | None = None,
+) -> RecoveryPolicy | None:
+    """Select a bounded and verifiable recovery policy using historical evidence."""
+    policy = POLICIES.get(fault)
+
+    if policy is None:
+        return None
+
+    verified_playbooks = (memory or {}).get("verified_playbooks", {})
+
+    if verified_playbooks:
+        preferred_playbook = max(
+            verified_playbooks,
+            key=verified_playbooks.get,
+        )
+
+        for candidate in POLICIES.values():
+            if (
+                candidate.fault == fault
+                and candidate.playbook == preferred_playbook
+            ):
+                return candidate
+
+    return policy

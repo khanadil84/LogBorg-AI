@@ -60,3 +60,21 @@ def test_no_verification_policy_is_blocked():
 
     assert decision.allowed is False
     assert "verification" in decision.reason
+
+
+def test_recovery_policy_prefers_verified_historical_playbook():
+    from logborg.policy.recovery import select_recovery_policy
+
+    memory = {
+        "historical_incidents": 10,
+        "historical_verified": 10,
+        "verification_rate": 1.0,
+        "verified_playbooks": {
+            "BUFFER_SANDBOX_OVERRIDE": 7,
+        },
+    }
+
+    policy = select_recovery_policy("BUFFER_OVERFLOW", memory)
+
+    assert policy is not None
+    assert policy.playbook == "BUFFER_SANDBOX_OVERRIDE"
