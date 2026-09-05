@@ -113,7 +113,17 @@ function render(){
   statusEl.textContent = state.overall_status || "IDLE";
   messageEl.textContent = state.message || "";
 
-  eventsEl.innerHTML = (state.events || []).slice(-12).reverse()
+  const events = state.events || [];
+  const policyEvent = [...events].reverse().find(e =>
+    e.message && e.message.includes("Recovery policy selected:")
+  );
+  const visibleEvents = events.slice(-20).reverse();
+
+  if (policyEvent && !visibleEvents.some(e => e === policyEvent)) {
+    visibleEvents.unshift(policyEvent);
+  }
+
+  eventsEl.innerHTML = visibleEvents
     .map(e => `<div class="event"><b>${esc(e.phase)}</b> · ${esc(e.kind)}<br>${esc(e.message)}</div>`)
     .join("") || `<div class="event">Waiting for runtime events…</div>`;
 
@@ -123,7 +133,21 @@ function render(){
 }
 
 function apply(snapshot){
+  const previousEvents = state.events || [];
+  const incomingEvents = snapshot.events || [];
+
+  const mergedEvents = [...previousEvents, ...incomingEvents].filter(
+    (event, index, array) =>
+      index === array.findIndex(e =>
+        e.ts === event.ts &&
+        e.phase === event.phase &&
+        e.kind === event.kind &&
+        e.message === event.message
+      )
+  ).slice(-80);
+
   Object.assign(state, snapshot);
+  state.events = mergedEvents;
   render();
 }
 

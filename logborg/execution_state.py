@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 
-PHASES = ("INGEST", "DIAGNOSE", "REPAIR", "VERIFY", "RECOVERED")
+PHASES = ("INGEST", "DIAGNOSE", "SAFETY", "REPAIR", "VERIFY", "RECOVERED")
 
 # Node visual states driven only by real orchestrator transitions.
 NODE_PENDING = "pending"

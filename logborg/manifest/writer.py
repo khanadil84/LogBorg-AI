@@ -10,6 +10,8 @@ def write_manifest(
     target: str,
     run_id: str,
     diagnosis: dict[str, Any],
+    policy: dict[str, Any],
+    safety: dict[str, Any],
     repair: dict[str, Any],
     verification: dict[str, Any],
 ) -> Path:
@@ -46,6 +48,8 @@ def write_manifest(
             "RECOVERY_VERIFIED",
         ],
         "diagnosis": diagnosis,
+        "policy": policy,
+        "safety": safety,
         "repair": repair,
         "verification": verification,
     }

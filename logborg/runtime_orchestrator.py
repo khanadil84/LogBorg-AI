@@ -7,6 +7,8 @@ from logborg.diagnosis.runtime import diagnose_runtime_failure
 from logborg.execution_state import LIVE, new_run_id
 from logborg.ingestion.runtime import run_runtime, stream_runtime
 from logborg.manifest.writer import write_manifest
+from logborg.policy.recovery import select_recovery_policy
+from logborg.policy.safety import evaluate_safety
 from logborg.repair.runtime import apply_runtime_repair, rollback_runtime_repair
 from logborg.verification.runtime import verify_runtime_recovery
 
@@ -138,6 +140,60 @@ def recover(
         f"{diagnosis.fault} ({diagnosis.severity}) — {diagnosis.root_cause}",
     )
 
+    policy = select_recovery_policy(diagnosis.fault)
+
+    if policy is None:
+        state.fail_phase(
+            "DIAGNOSE",
+            "NO_RECOVERY_POLICY",
+            f"No recovery policy exists for {diagnosis.fault}.",
+        )
+        evidence["status"] = "NO_RECOVERY_POLICY"
+        state.set_evidence(evidence)
+        _write_evidence(project_root, evidence)
+        return False
+
+    evidence["policy"] = {
+        "playbook": policy.playbook,
+        "max_attempts": policy.max_attempts,
+        "rollback_on_failure": policy.rollback_on_failure,
+        "requires_verification": policy.requires_verification,
+    }
+
+    state.complete_phase(
+        "DIAGNOSE",
+        f"{diagnosis.fault} ({diagnosis.severity}) — {diagnosis.root_cause} Recovery policy selected: {policy.playbook}.",
+    )
+
+    # --- SAFETY GATE -----------------------------------------------------
+    state.begin_phase(
+        "SAFETY",
+        f"Evaluating safety constraints for {policy.playbook}.",
+    )
+
+    safety = evaluate_safety(policy)
+
+    evidence["safety"] = {
+        "allowed": safety.allowed,
+        "reason": safety.reason,
+    }
+
+    if not safety.allowed:
+        state.fail_phase(
+            "SAFETY",
+            "SAFETY_BLOCKED",
+            safety.reason,
+        )
+        evidence["status"] = "SAFETY_BLOCKED"
+        state.set_evidence(evidence)
+        _write_evidence(project_root, evidence)
+        return False
+
+    state.complete_phase(
+        "SAFETY",
+        safety.reason,
+    )
+
     # --- REPAIR -----------------------------------------------------------
     state.begin_phase(
         "REPAIR",
@@ -175,7 +231,7 @@ def recover(
     attempts: list[dict] = []
     verified = False
 
-    for attempt in range(1, MAX_RECOVERY_ATTEMPTS + 1):
+    for attempt in range(1, policy.max_attempts + 1):
         recovered = run_runtime(source, project_root)
 
         attempt_evidence = {
@@ -238,6 +294,8 @@ def recover(
         target=source,
         run_id=run_id,
         diagnosis=evidence["diagnosis"],
+        policy=evidence["policy"],
+        safety=evidence["safety"],
         repair=evidence["repair"],
         verification=evidence["verification"],
     )
