@@ -628,7 +628,7 @@ This executes the full 6-phase pipeline against `fixtures/runtime_failure.py` an
 ### Run the Log-Based Orchestrator
 
 ```bash
-python -m logborg.orchestrator
+python3 -m logborg.orchestrator
 ```
 
 Streams `fixtures/sample.log`, detects the buffer overflow signature, and applies the sandbox mitigation.
