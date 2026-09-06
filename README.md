@@ -612,7 +612,7 @@ LogBorg-AI/
 ### Run the Dashboard
 
 ```bash
-python _start.py
+python3 _start.py
 ```
 
 Opens the Recovery Console at `http://127.0.0.1:8792`. Click **Run Recovery** to trigger the autonomous pipeline.
@@ -620,7 +620,7 @@ Opens the Recovery Console at `http://127.0.0.1:8792`. Click **Run Recovery** to
 ### Run the Orchestrator Directly
 
 ```bash
-python -m logborg.runtime_orchestrator
+python3 -m logborg.runtime_orchestrator
 ```
 
 This executes the full 6-phase pipeline against `fixtures/runtime_failure.py` and prints `LOGBORG RECOVERY: SUCCESS` or `FAILURE`.
@@ -636,7 +636,7 @@ Streams `fixtures/sample.log`, detects the buffer overflow signature, and applie
 ### Run the Tests
 
 ```bash
-pytest tests/ -v
+python3 -m pytest tests/ -v
 ```
 
 28 passing tests covering runtime recovery, safety policy enforcement, incident memory, reconciliation, drift detection, and adaptive multi-step recovery.
