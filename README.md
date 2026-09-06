@@ -96,7 +96,7 @@ The system executes the target workload via `subprocess` and streams live stdout
 
 ```python
 # From logborg/ingestion/runtime.py
-process = subprocess.run(["python", source], capture_output=True, text=True, env=env)
+process = subprocess.run(["python3", source], capture_output=True, text=True, env=env)
 return RuntimeResult(return_code=process.returncode, stdout=process.stdout, stderr=process.stderr)
 ```
 
